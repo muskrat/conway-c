@@ -37,10 +37,40 @@ int count_neighbours(int world[MAX_X][MAX_Y], int x_pos, int y_pos)
 /* Advance game one step: apply rules to all cells in world */
 void apply_rules(int world[MAX_X][MAX_Y])
 {
-    int x, y;
+    int x, y, cell, neighbours;
+    /* Make a copy of world */
+
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
-            world[x][y] = 0;
+            cell = world[x][y];
+            neighbours = count_neighbours(world, x, y);
+            /*
+             * First rule: any live cell with fewer than two live
+             * neighbours dies of loneliness
+             */
+            if (cell == 1 && neighbours < 2) {
+                world[x][y] = 0;
+            }
+            /* Second rule: any live cell with two or three live
+             * neighbours lives on to the next generation. This 
+             * doesn't really need to be here but it makes it more
+             * obvious what's going on.
+             */
+            else if (cell == 1 && neighbours == 2 || neighbours == 3) {
+                world[x][y] = 1;
+            }
+            /* Third rule: any live cell with more than three live 
+             * neighbours dies of overpopulation.
+             */
+            else if (cell == 1 && neighbours > 3) {
+                world[x][y] = 0;
+            }
+            /* Fourth rule: any dead cell with exactly three live
+             * neighbours becomes alive
+             */
+            else if (cell == 0 && neighbours == 3) {
+                world[x][y] = 1;
+            }
         }
     }
 }
@@ -56,6 +86,18 @@ void populate_random(int world[MAX_X][MAX_Y])
     }
 }
 
+void print_world(int world[MAX_X][MAX_Y])
+{
+    int x, y;
+    /* Print out array values */
+    for (y = 0; y < MAX_X; y++) {
+        for (x = 0; x < MAX_Y; x++){
+            printf("%i ", world[x][y]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
 int main()
 {
     /* Seed random number generator. Seeded with system time so a
@@ -67,15 +109,11 @@ int main()
     
     /* Randomise array values */
     populate_random(world);
+    print_world(world);
 
-    int x, y;
-    /* Print out array values */
-    for (y = 0; y < MAX_X; y++) {
-        for (x = 0; x < MAX_Y; x++){
-            printf("%i ", world[x][y]);
-        }
-        printf("\n");
-    }
+    /* Advance game one step */
+    apply_rules(world);
+    print_world(world);
     /* Test neighbour count function */
     int neighbours = count_neighbours(world, 0, 0);
     printf("neighbours: %i \n", neighbours);
