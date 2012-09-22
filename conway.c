@@ -19,26 +19,32 @@ int randint()
 /* Count the number of living neighbours of a given cell */
 int count_neighbours(int world[MAX_X][MAX_Y], int x_pos, int y_pos)
 {
-    int x, y, cell, count;
-    int this_cell = world[x_pos][y_pos];
+    int x, y, cx, cy, cell;
+    int count = 0;
     /* Iterate through neighbouring cells */
     for (y = -1; y < 2; y++) {
         for (x = -1; x < 2; x++) {
-            cell = world[x_pos + x][y_pos + y];
-            /* We don't count the cell we're neighbour-checking */
-            if (cell == 1 && cell != this_cell) {
-                count += 1;
+            cx = x_pos + x;
+            cy = y_pos + y;
+            /* Check that current x and y indices aren't out of bounds */
+            if ( (0 <= cx && cx < MAX_X) && (0 <= cy && cy < MAX_Y)) {
+                cell = world[x_pos + x][y_pos + y];
+                if (cell == 1)
+                    count ++;
             }
         }
+    }
+    /* Make sure the cell we're checking isn't counted */
+    if (world[x_pos][y_pos] == 1) {
+        count -= 1;
     }
     return count;
 }
 
 /* Advance game one step: apply rules to all cells in world */
-void apply_rules(int world[MAX_X][MAX_Y])
+void apply_rules(int world[MAX_X][MAX_Y], int next[MAX_X][MAX_Y])
 {
     int x, y, cell, neighbours;
-    /* Make a copy of world */
 
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
@@ -49,7 +55,7 @@ void apply_rules(int world[MAX_X][MAX_Y])
              * neighbours dies of loneliness
              */
             if (cell == 1 && neighbours < 2) {
-                world[x][y] = 0;
+                next[x][y] = 0;
             }
             /* Second rule: any live cell with two or three live
              * neighbours lives on to the next generation. This 
@@ -57,31 +63,34 @@ void apply_rules(int world[MAX_X][MAX_Y])
              * obvious what's going on.
              */
             else if (cell == 1 && neighbours == 2 || neighbours == 3) {
-                world[x][y] = 1;
+                next[x][y] = 1;
             }
             /* Third rule: any live cell with more than three live 
              * neighbours dies of overpopulation.
              */
             else if (cell == 1 && neighbours > 3) {
-                world[x][y] = 0;
+                next[x][y] = 0;
             }
             /* Fourth rule: any dead cell with exactly three live
              * neighbours becomes alive
              */
             else if (cell == 0 && neighbours == 3) {
-                world[x][y] = 1;
+                next[x][y] = 1;
             }
         }
     }
 }
 
 /* Randomise world state */
-void populate_random(int world[MAX_X][MAX_Y])
+void populate(int world[MAX_X][MAX_Y], int rand)
 {
     int x, y;
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
-            world[x][y] = randint();
+            if (rand == 1)
+                world[x][y] = randint();
+            else
+                world[x][y] = 0;
         }
     }
 }
@@ -106,17 +115,14 @@ int main()
     srand(time(0));
     
     int world[MAX_X][MAX_Y];
-    
-    /* Randomise array values */
-    populate_random(world);
-    print_world(world);
+    int next[MAX_X][MAX_Y];
 
-    /* Advance game one step */
-    apply_rules(world);
+    populate(world, 1);
+    populate(next, 0);
     print_world(world);
-    /* Test neighbour count function */
-    int neighbours = count_neighbours(world, 0, 0);
-    printf("neighbours: %i \n", neighbours);
+    apply_rules(world, next);
+    print_world(next);
+
     return 0;
 }
 
