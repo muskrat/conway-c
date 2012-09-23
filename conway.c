@@ -1,12 +1,30 @@
 /* Conway's Game of Life in C
  *
- * I K Stead, 20-09-2012
+ * (c) I K Stead, 20-09-2012
+ *
+ * First rule: any live cell with fewer than two live
+ * neighbours dies of loneliness
+ *
+ * Second rule: any live cell with two or three live
+ * neighbours lives on to the next generation.
+ *
+ * Third rule: any live cell with more than three live 
+ * neighbours dies of overpopulation.
+ *
+ * Fourth rule: any dead cell with exactly three live
+ * neighbours comes to life.
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+#include <string.h>
 
-#define MAX_X 5
-#define MAX_Y 5
+#define ALIVE   1
+#define DEAD    0
+#define MAX_X   10
+#define MAX_Y   10
+#define WAIT    1
 
 /* Generate a random integer between 0 and 1 */
 int randint()
@@ -15,7 +33,6 @@ int randint()
     r = rand() % 2;
     return r;
 }
-
 /* Count the number of living neighbours of a given cell */
 int count_neighbours(int world[MAX_X][MAX_Y], int x_pos, int y_pos)
 {
@@ -29,58 +46,43 @@ int count_neighbours(int world[MAX_X][MAX_Y], int x_pos, int y_pos)
             /* Check that current x and y indices aren't out of bounds */
             if ( (0 <= cx && cx < MAX_X) && (0 <= cy && cy < MAX_Y)) {
                 cell = world[x_pos + x][y_pos + y];
-                if (cell == 1)
+                if (cell == ALIVE)
                     count ++;
             }
         }
     }
     /* Make sure the cell we're checking isn't counted */
-    if (world[x_pos][y_pos] == 1) {
-        count -= 1;
+    if (world[x_pos][y_pos] == ALIVE) {
+        count --;
     }
     return count;
 }
-
-/* Advance game one step: apply rules to all cells in world */
-void apply_rules(int world[MAX_X][MAX_Y], int next[MAX_X][MAX_Y])
+/* Advance game one step: apply rules to all cells in source */
+void apply_rules(int world[MAX_X][MAX_Y])
 {
     int x, y, cell, neighbours;
+    /* Create a temporary copy of world to iterate through. This is so
+     * the state of the world isn't changing as it's being checked
+     */
+    int temp[MAX_X][MAX_Y];
+    memcpy(temp, world, sizeof(temp));
 
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
-            cell = world[x][y];
-            neighbours = count_neighbours(world, x, y);
-            /*
-             * First rule: any live cell with fewer than two live
-             * neighbours dies of loneliness
-             */
-            if (cell == 1 && neighbours < 2) {
-                next[x][y] = 0;
-            }
-            /* Second rule: any live cell with two or three live
-             * neighbours lives on to the next generation. This 
-             * doesn't really need to be here but it makes it more
-             * obvious what's going on.
-             */
-            else if (cell == 1 && neighbours == 2 || neighbours == 3) {
-                next[x][y] = 1;
-            }
-            /* Third rule: any live cell with more than three live 
-             * neighbours dies of overpopulation.
-             */
-            else if (cell == 1 && neighbours > 3) {
-                next[x][y] = 0;
-            }
-            /* Fourth rule: any dead cell with exactly three live
-             * neighbours becomes alive
-             */
-            else if (cell == 0 && neighbours == 3) {
-                next[x][y] = 1;
+            cell = temp[x][y];
+            neighbours = count_neighbours(temp, x, y);
+            
+            if (cell == ALIVE) {     
+                if (neighbours < 2 || neighbours > 3)
+                    world[x][y] = DEAD;
+            } 
+            else {                  /* Dead */
+                if (neighbours == 3)
+                    world[x][y] = ALIVE;
             }
         }
     }
 }
-
 /* Randomise world state */
 void populate(int world[MAX_X][MAX_Y], int rand)
 {
@@ -94,7 +96,7 @@ void populate(int world[MAX_X][MAX_Y], int rand)
         }
     }
 }
-
+/* Print world array to terminal, followed by a newline. */
 void print_world(int world[MAX_X][MAX_Y])
 {
     int x, y;
@@ -115,14 +117,15 @@ int main()
     srand(time(0));
     
     int world[MAX_X][MAX_Y];
-    int next[MAX_X][MAX_Y];
+    populate(world, 1); /* Initialise world array with random values */
 
-    populate(world, 1);
-    populate(next, 0);
-    print_world(world);
-    apply_rules(world, next);
-    print_world(next);
-
-    return 0;
+    /* Main loop */
+    int count = 0;
+    char input;
+    while (1) {
+        apply_rules(world);
+        print_world(world);
+        sleep(WAIT);
+    }
+    return EXIT_SUCCESS;
 }
-
