@@ -19,11 +19,12 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
+#include <SFML/System.h>
 
 #define ALIVE   1
 #define DEAD    0
-#define MAX_X   10
-#define MAX_Y   10
+#define MAX_X   20
+#define MAX_Y   20
 #define WAIT    1
 
 /* Generate a random integer between 0 and 1 */
@@ -62,7 +63,7 @@ void apply_rules(int world[MAX_X][MAX_Y])
 {
     int x, y, cell, neighbours;
     /* Create a temporary copy of world to iterate through. This is so
-     * the state of the world isn't changing as it's being checked
+     * the state of the world isn't changing as it's being checked.
      */
     int temp[MAX_X][MAX_Y];
     memcpy(temp, world, sizeof(temp));
@@ -76,7 +77,7 @@ void apply_rules(int world[MAX_X][MAX_Y])
                 if (neighbours < 2 || neighbours > 3)
                     world[x][y] = DEAD;
             } 
-            else {                  /* Dead */
+            else { /* Dead */
                 if (neighbours == 3)
                     world[x][y] = ALIVE;
             }
@@ -100,10 +101,16 @@ void populate(int world[MAX_X][MAX_Y], int rand)
 void print_world(int world[MAX_X][MAX_Y])
 {
     int x, y;
+    char dc;
     /* Print out array values */
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
-            printf("%i ", world[x][y]);
+            if (world[x][y] == ALIVE) {
+                dc = '@';
+            } else {
+                dc = '`';
+            }
+            printf("%c ", dc); 
         }
         printf("\n");
     }
@@ -122,6 +129,7 @@ int main()
     /* Main loop */
     int count = 0;
     char input;
+
     while (1) {
         apply_rules(world);
         print_world(world);
