@@ -19,19 +19,18 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
-#include <SFML/System.h>
+#include <SDL/SDL.h>
 
 #define ALIVE   1
 #define DEAD    0
-#define MAX_X   20
-#define MAX_Y   20
+#define MAX_X   700
+#define MAX_Y   700
 #define WAIT    1
 
 /* Generate a random integer between 0 and 1 */
 int randint()
 {
-    int r;
-    r = rand() % 2;
+    int r = rand() % 2;
     return r;
 }
 /* Count the number of living neighbours of a given cell */
@@ -105,16 +104,77 @@ void print_world(int world[MAX_X][MAX_Y])
     /* Print out array values */
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
-            if (world[x][y] == ALIVE) {
+            if (world[x][y] == ALIVE)
                 dc = '@';
-            } else {
+            else 
                 dc = '`';
-            }
             printf("%c ", dc); 
         }
         printf("\n");
     }
     printf("\n");
+}
+
+/* 
+ * SDL display code 
+ */
+
+#define DEPTH 32    /* Colour depth */
+
+/* Set the pixel at (x, y) to the given value.
+ * NOTE: The surface must be locked before calling this!
+ *  From SDL docs - guidevideo.html
+ */
+void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
+{
+    int bpp = surface->format->BytesPerPixel;
+    /* Here p is the address to the pixel we want to set */
+    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+
+    switch(bpp) {
+    case 1:
+        *p = pixel;
+        break;
+    case 2:
+        *(Uint16 *)p = pixel;
+        break;
+    case 3:
+        if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+            p[0] = (pixel >> 16) & 0xff;
+            p[1] = (pixel >> 8) & 0xff;
+            p[2] = pixel & 0xff;
+        } else {
+            p[0] = pixel & 0xff;
+            p[1] = (pixel >> 8) & 0xff;
+            p[2] = (pixel >> 16) & 0xff;
+        }
+        break;
+    case 4:
+        *(Uint32 *)p = pixel;
+        break;
+    }
+}
+/* Draw a white pixel to given screen for each live cell in given world
+ * array. TODO: Make it easier to change colours.
+ */
+void draw_world(SDL_Surface *surface, int world[MAX_X][MAX_Y]) 
+{
+    /* Map colour white to the display */
+    Uint32 white = SDL_MapRGB(surface->format, 0xff, 0xff, 0xff);
+
+    /* Lock the screen for direct access to the pixels */
+    SDL_LockSurface(surface);
+
+    /* Loop through world array, drawing pixels to screen */
+    int x, y;
+    for (y = 0; y < MAX_Y; y++) {
+        for (x = 0; x < MAX_X; x++) {
+            if (world[x][y] == 1)
+                putpixel(surface, x, y, white);
+        }
+    }
+    /* Unlock surface */
+    SDL_UnlockSurface(surface);
 }
 int main()
 {
@@ -126,14 +186,21 @@ int main()
     int world[MAX_X][MAX_Y];
     populate(world, 1); /* Initialise world array with random values */
 
-    /* Main loop */
-    int count = 0;
-    char input;
+    /* Set up SDL window */
+    SDL_Surface *screen;
+    SDL_Event event;
+    
+    SDL_Init(SDL_INIT_VIDEO);
+    screen = SDL_SetVideoMode(MAX_X, MAX_Y, DEPTH, SDL_SWSURFACE);
 
+    /* Main loop */
     while (1) {
+        SDL_FillRect(screen, NULL, 0);
         apply_rules(world);
-        print_world(world);
+        draw_world(screen, world);
+        SDL_Flip(screen);   /* Updates SDL window */
         sleep(WAIT);
     }
+    SDL_Quit();
     return EXIT_SUCCESS;
 }
