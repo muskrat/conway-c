@@ -25,7 +25,7 @@
 #define DEAD    0
 #define MAX_X   700
 #define MAX_Y   700
-#define WAIT    1
+#define WAIT    100000 /* Microseconds to wait between iterations */
 
 /* Generate a random integer between 0 and 1 */
 int randint()
@@ -186,20 +186,33 @@ int main()
     int world[MAX_X][MAX_Y];
     populate(world, 1); /* Initialise world array with random values */
 
-    /* Set up SDL window */
+    /* Set up SDL */
     SDL_Surface *screen;
     SDL_Event event;
+    int user_exit;
     
     SDL_Init(SDL_INIT_VIDEO);
     screen = SDL_SetVideoMode(MAX_X, MAX_Y, DEPTH, SDL_SWSURFACE);
 
     /* Main loop */
-    while (1) {
+    while (!user_exit) {
         SDL_FillRect(screen, NULL, 0);
         apply_rules(world);
         draw_world(screen, world);
         SDL_Flip(screen);   /* Updates SDL window */
-        sleep(WAIT);
+        
+        /* Check for user input, quit if required */
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    user_exit = 1;
+                    break;
+                case SDL_KEYDOWN:
+                    user_exit = 1;
+                    break;
+            }
+        }
+        usleep(WAIT);
     }
     SDL_Quit();
     return EXIT_SUCCESS;
