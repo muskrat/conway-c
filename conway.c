@@ -21,11 +21,12 @@
 #include <string.h>
 #include <SDL/SDL.h>
 
-#define ALIVE   1
-#define DEAD    0
-#define MAX_X   700
-#define MAX_Y   700
-#define WAIT    100000 /* Microseconds to wait between iterations */
+#define ALIVE       1
+#define DEAD        0
+#define MAX_X       80
+#define MAX_Y       80
+#define WAIT        100000 /* Microseconds to wait between iterations */
+#define CELLSIZE    10
 
 /* Generate a random integer between 0 and 1 */
 int randint()
@@ -157,7 +158,7 @@ void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
 /* Draw a white pixel to given screen for each live cell in given world
  * array. TODO: Make it easier to change colours.
  */
-void draw_world(SDL_Surface *surface, int world[MAX_X][MAX_Y]) 
+void draw_world_pixels(SDL_Surface *surface, int world[MAX_X][MAX_Y]) 
 {
     /* Map colour white to the display */
     Uint32 white = SDL_MapRGB(surface->format, 0xff, 0xff, 0xff);
@@ -176,6 +177,26 @@ void draw_world(SDL_Surface *surface, int world[MAX_X][MAX_Y])
     /* Unlock surface */
     SDL_UnlockSurface(surface);
 }
+/* Draw a white rectangle of specified size to the screen for each cell
+ * in given world array.
+ * TODO: Add colour selection and a thin line in between the cells
+ */
+void draw_world_rects(SDL_Surface *surface, int world[MAX_X][MAX_Y], int cellsize)
+{
+    /* Map colour white to the display */
+    Uint32 white = SDL_MapRGB(surface->format, 0xff, 0xff, 0xff);
+
+    int x, y;
+    for (y = 0; y < MAX_Y; y++) {
+        for (x = 0; x < MAX_X; x++) {
+            if (world[x][y] == 1) {
+                SDL_Rect cell = {x*cellsize, y*cellsize, cellsize, cellsize};
+                SDL_FillRect(surface, &cell, white);
+            }
+        }
+    }
+}
+
 int main()
 {
     /* Seed random number generator. Seeded with system time so a
@@ -192,13 +213,18 @@ int main()
     int user_exit;
     
     SDL_Init(SDL_INIT_VIDEO);
-    screen = SDL_SetVideoMode(MAX_X, MAX_Y, DEPTH, SDL_SWSURFACE);
+    
+    /* Initialise screen with size dependent on cell size. TODO: Either
+     * remove pixel drawing function or add code to allow easy selection
+     * between rect and pixel drawing methods.
+     */
+    screen = SDL_SetVideoMode(MAX_X*CELLSIZE, MAX_Y*CELLSIZE, DEPTH, SDL_SWSURFACE);
 
     /* Main loop */
     while (!user_exit) {
-        SDL_FillRect(screen, NULL, 0);
+        SDL_FillRect(screen, NULL, 0); /* Blank out screen */
         apply_rules(world);
-        draw_world(screen, world);
+        draw_world_rects(screen, world, CELLSIZE);
         SDL_Flip(screen);   /* Updates SDL window */
         
         /* Check for user input, quit if required */
