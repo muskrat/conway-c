@@ -23,10 +23,11 @@
 
 #define ALIVE       1
 #define DEAD        0
-#define MAX_X       80
-#define MAX_Y       80
-#define WAIT        100000 /* Microseconds to wait between iterations */
-#define CELLSIZE    10
+#define MAX_X       200
+#define MAX_Y       200
+#define WAIT        100000  /* Microseconds to wait between iterations */
+#define CELLSIZE    4       /* Width/height of cells in pixels */
+#define LINE        1       /* Pixel width of line between cells */
 
 /* Generate a random integer between 0 and 1 */
 int randint()
@@ -181,7 +182,7 @@ void draw_world_pixels(SDL_Surface *surface, int world[MAX_X][MAX_Y])
  * in given world array.
  * TODO: Add colour selection and a thin line in between the cells
  */
-void draw_world_rects(SDL_Surface *surface, int world[MAX_X][MAX_Y], int cellsize)
+void draw_world_rects(SDL_Surface *surface, int world[MAX_X][MAX_Y], int cellsize, int linew)
 {
     /* Map colour white to the display */
     Uint32 white = SDL_MapRGB(surface->format, 0xff, 0xff, 0xff);
@@ -190,7 +191,7 @@ void draw_world_rects(SDL_Surface *surface, int world[MAX_X][MAX_Y], int cellsiz
     for (y = 0; y < MAX_Y; y++) {
         for (x = 0; x < MAX_X; x++) {
             if (world[x][y] == 1) {
-                SDL_Rect cell = {x*cellsize, y*cellsize, cellsize, cellsize};
+                SDL_Rect cell = {x*cellsize, y*cellsize, cellsize-linew, cellsize-linew};
                 SDL_FillRect(surface, &cell, white);
             }
         }
@@ -224,7 +225,7 @@ int main()
     while (!user_exit) {
         SDL_FillRect(screen, NULL, 0); /* Blank out screen */
         apply_rules(world);
-        draw_world_rects(screen, world, CELLSIZE);
+        draw_world_rects(screen, world, CELLSIZE, LINE);
         SDL_Flip(screen);   /* Updates SDL window */
         
         /* Check for user input, quit if required */
