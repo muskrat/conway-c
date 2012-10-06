@@ -28,6 +28,7 @@
 #define WAIT        100000  /* Microseconds to wait between iterations */
 #define CELLSIZE    4       /* Width/height of cells in pixels */
 #define LINE        1       /* Pixel width of line between cells */
+#define DENSITY     7       /* Starting density of live cells */
 
 /* Generate a random integer between 0 and 1 */
 int randint()
@@ -35,6 +36,18 @@ int randint()
     int r = rand() % 2;
     return r;
 }
+
+/* Choose 0 or 1 at random with weighting */
+int weighted_randint(int true_weight)
+{
+    int choice = rand() % 10;  /* Take last digit of random int */
+    
+    if (choice > true_weight)
+        return 1;
+    else
+        return 0;
+}
+
 /* Count the number of living neighbours of a given cell */
 int count_neighbours(int world[MAX_X][MAX_Y], int x_pos, int y_pos)
 {
@@ -59,6 +72,7 @@ int count_neighbours(int world[MAX_X][MAX_Y], int x_pos, int y_pos)
     }
     return count;
 }
+
 /* Advance game one step: apply rules to all cells in source */
 void apply_rules(int world[MAX_X][MAX_Y])
 {
@@ -92,7 +106,7 @@ void populate(int world[MAX_X][MAX_Y], int rand)
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
             if (rand == 1)
-                world[x][y] = randint();
+                world[x][y] = weighted_randint(DENSITY);
             else
                 world[x][y] = 0;
         }
@@ -180,7 +194,7 @@ void draw_world_pixels(SDL_Surface *surface, int world[MAX_X][MAX_Y])
 }
 /* Draw a white rectangle of specified size to the screen for each cell
  * in given world array.
- * TODO: Add colour selection and a thin line in between the cells
+ * TODO: Add colour selection
  */
 void draw_world_rects(SDL_Surface *surface, int world[MAX_X][MAX_Y], int cellsize, int linew)
 {
@@ -191,6 +205,10 @@ void draw_world_rects(SDL_Surface *surface, int world[MAX_X][MAX_Y], int cellsiz
     for (y = 0; y < MAX_Y; y++) {
         for (x = 0; x < MAX_X; x++) {
             if (world[x][y] == 1) {
+                /* Cell rectangle; Multiply array indices to get top left,
+                 * subtract linewidth from dimensions for line between 
+                 * cells.
+                 */
                 SDL_Rect cell = {x*cellsize, y*cellsize, cellsize-linew, cellsize-linew};
                 SDL_FillRect(surface, &cell, white);
             }
