@@ -11,3 +11,4 @@
 #define LINE        1       /* Pixel width of line between cells */
 #define DEPTH       32      /* Colour depth */
 #define WAIT    10000
+#define DENSITY     7       /* Starting density of live cells */

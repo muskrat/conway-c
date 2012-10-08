@@ -19,6 +19,17 @@ int randint()
     return r;
 }
 
+/* Choose 0 or 1 at random with weighting */
+int weighted_randint(int true_weight)
+{
+    int choice = rand() % 10;  /* Take last digit of random int */
+    
+    if (choice > true_weight)
+        return 1;
+    else
+        return 0;
+}
+
 /* Count the number of living neighbours of a given cell */
 int count_neighbours(int world[][MAX_Y], int x_pos, int y_pos)
 {
@@ -78,7 +89,7 @@ void populate(int world[MAX_X][MAX_Y], int rand)
     for (y = 0; y < MAX_X; y++) {
         for (x = 0; x < MAX_Y; x++){
             if (rand == 1)
-                world[x][y] = randint();
+                world[x][y] = weighted_randint(DENSITY);
             else
                 world[x][y] = 0;
         }
